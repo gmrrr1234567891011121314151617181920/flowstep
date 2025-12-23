@@ -9,7 +9,7 @@ If you try FlowStep with my prompt and you wonder that your diagram looks very s
 
 **Note2:** This App is just the "base" of this idea, do whatever you want and need to do **(add/remove/adapt)** to make it work for you and your team.
 
-![FlowStep Sequence](./sequence.gif)
+![FlowStep Sequence](./Sequence.gif)
 
 # Prerequisites
 
