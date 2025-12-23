@@ -43,7 +43,8 @@ e.g: ➜ Local:   http://localhost:3000/
 ```
 💡The Workflow (80/20 Principle)  
 80% is already done / 20% - the finish - comes from you  
-Logic Extraction: Have the **(Prompt_english.txt)** prompt ready, insert the copy of your code at the bottom and let an AI (local or cloud) (e.g., Gemini (best results while testing)) generate the logic data in ReactFlow JSON format.
+Logic Extraction: Have the **(Prompt_english.txt)** prompt ready, insert the copy of your code **at the bottom** and let an AI (local or cloud) (e.g., Gemini (best results while testing)) generate the logic data in ReactFlow JSON format.  
+Prompt build: What to do -> ReactFlow example (dont delete this - or you get output which does not exist in my ReactFlow scheme) -> Your Code (this is the place for your code).
 
 1. Import: **Completely replace** the content of **constants.tsx** with the code provided by the AI. If changes aren't visible immediately, click "Restore Defaults" on the right.
 

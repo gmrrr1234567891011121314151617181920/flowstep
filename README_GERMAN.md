@@ -1,7 +1,15 @@
 # FlowStep - AI-Automated Code-to-Support-Flow Visualizer
 
 FlowStep ist ein Tool, um komplexe Codelogik in saubere, einfach zu verstehende, interaktive Prozessdiagramme zu konvertieren. Perfekt für die Schnittstelle zwischen Development und Support.
-Das Tool ist nicht dafür gedacht Support Mitarbeitern eine Prüfungscheckliste zu bauen oder Code in seiner Komplexität darzustellen, sondern den Kollegen zu helfen den Ablauf des Codes zu verstehen um das logische Schlüsse zur Nichtfunktion des Moduls treffen zu können.
+Das Tool ist nicht dafür gedacht Support Mitarbeitern eine Prüfungscheckliste zu bauen oder Code in seiner Komplexität darzustellen, sondern den Kollegen zu helfen den Ablauf des Codes zu verstehen um das logische Schlüsse zur Nichtfunktion des Moduls treffen zu können.  
+
+Wenn du FlowStep mit meinem Prompt ausprobierst und dich wunderst, dass dein Diagramm sehr einfach aussieht – genau das war das Ziel 😉  
+
+**Hinweis:** Eine komplette manuelle Erstellung ist möglich, FlowStep ist jedoch auf Geschwindigkeit durch KI ausgelegt. Wenn du keine KI einsetzen darfst oder lieber alles von Grund auf selbst baust, bietet das ReactFlow-[showcase](https://reactflow.dev/showcase) möglicherweise klassischere und passendere Alternativen.  
+
+**Hinweis 2:** Diese App ist nur die Basis der Idee. Passe sie nach Belieben an (hinzufügen / entfernen / anpassen), damit sie für dich und dein Team sinnvoll funktioniert.  
+
+![FlowStep Sequence](./Sequence.gif)
 
 ## Voraussetzungen
 
@@ -35,7 +43,8 @@ z.B: ➜ Local:   http://localhost:3000/
 
 💡 Der Workflow (80/20 Prinzip)  
 80% bereits fertig / 20% - das finish - machst du selbst  
-Logik-Extraktion: Kopiere deinen Code und lass dir von einer KI (lokal oder cloud) (z.B. Gemini (beste Resultate bei tests)) mit dem passenden FlowStep-Prompt (.txt im VZ) die Logik-Daten im JSON-Format erstellen.
+Logik-Extraktion: Kopiere deinen Code und lass dir von einer KI (lokal oder cloud) (z.B. Gemini (beste Resultate bei tests)) mit dem passenden FlowStep-Prompt (prompt_german.txt im VZ) die Logik-Daten im JSON-Format erstellen.  
+Prompt-Aufbau: Was soll die KI tun + Richtlinien für Design -> Ein ReactFlow Beispiel (lösche das nicht - wenn ersetze es durch dein eigenes best practice) -> Dein Code (hier ist der Platz für deinen Code).
 
 1. Import: Ersetze den Inhalt der **constants.tsx komplett** mit dem dir ausgelieferten Code der KI. Falls nicht sofort sichtbar, drücke rechts auf "Restore Defaults".
 
