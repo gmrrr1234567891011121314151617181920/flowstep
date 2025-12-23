@@ -57,27 +57,37 @@ The exported HTML file is completely independent. You can send it to support, em
 Happy Visualizing!
 
 ```text
-⚠️ Save/Copy/Restore Defaults and Export Portable HTML buttons - what to know so you dont think "meh, doesnt work" ⚠️
+⚠️ Save/Copy/Restore Defaults and Export Portable HTML buttons - what to know so you dont think 
+"meh, doesnt work" ⚠️
 
 "Browser Save"
-Save Button: This button saves your current progress to your browser's LocalStorage. If you refresh the page, your work will still be there. 
-Note: This does not write changes back to your actual constants.tsx file on your hard drive, use "Copy" for that.
+Save Button: This button saves your current progress to your browser's LocalStorage. 
+If you refresh the page, your work will still be there. 
+Note: This does not write changes back to your actual constants.tsx file 
+on your hard drive, use "Copy" for that.
 
 "Hard Save"
 Copy: This button copies the entire code for your constants.tsx to your clipboard. 
-To "hard-save" your work permanently, replace the **complete** content of your local constants.tsx file with this copied code.
+To "hard-save" your work permanently, replace the **complete** content of your local 
+constants.tsx file with this copied code.
 
-Restore Defauls: This button resets the editor to the state currently defined in your constants.tsx file. 
-Use this if you see an outdated flow from your LocalStorage or want to start over from the file's original state.
+Restore Defauls: This button resets the editor to the state currently defined in your 
+constants.tsx file. 
+Use this if you see an outdated flow from your LocalStorage or want to start over 
+from the file's original state.
 
-Export portable HTML: This function uses the data from your LocalStorage to generate the HTML file. Crucial: Always click **"Save"** before exporting to ensure the HTML >includes your latest changes.
+Export portable HTML: This function uses the data from your LocalStorage to generate 
+the HTML file. Crucial: Always click **"Save"** before exporting to ensure the HTML 
+>includes your latest changes.
 ```
 ```text
 Tips & Tricks
 
 ➡️ ⬇️ Straight Arrow connections:
-When it seems not possible to connect a straight arrow from one node to the other. It may come from the AI import. Try to snap all nodes to the grid and then reconnect them.
-This will most likely occur after the first import when you moved one node but not the other - the node you moved is snaped to the grid the other is not.
+When it seems not possible to connect a straight arrow from one node to the other. 
+It may come from the AI import. Try to snap all nodes to the grid and then reconnect them.
+This will most likely occur after the first import when you moved one node but not the other. 
+The node you moved is snaped to the grid the other is not.
 Move all the nodes one time and then use the "Align Y" or "Align X" buttons.
 ```
 
