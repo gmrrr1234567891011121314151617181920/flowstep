@@ -7,7 +7,7 @@ If you try FlowStep with my prompt and you wonder that your diagram looks very s
 
 **Note:** While manual creation is possible, FlowStep is built for AI speed. If you are not allowed to use AI or prefer building everything from scratch, ReactFlow’s [showcase](https://reactflow.dev/showcase) might offer more traditional and better alternatives.
 
-**Note2:** This App is just the "base" of this idea, do whatever you want and need to do **(add/remove/adapt)** to make it work for you and your team.
+**Note2:** This app is already fully functional, but still just the "base" of this idea. Do whatever you want and need to do **(add/remove/adapt)** to make it work even better for you and your team.
 
 ![FlowStep Sequence](./Sequence.gif)
 

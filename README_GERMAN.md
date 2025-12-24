@@ -7,7 +7,7 @@ Wenn du FlowStep mit meinem Prompt ausprobierst und dich wunderst, dass dein Dia
 
 **Hinweis:** Eine komplette manuelle Erstellung ist möglich, FlowStep ist jedoch auf Geschwindigkeit durch KI ausgelegt. Wenn du keine KI einsetzen darfst oder lieber alles von Grund auf selbst baust, bietet das ReactFlow-[showcase](https://reactflow.dev/showcase) möglicherweise klassischere und passendere Alternativen.  
 
-**Hinweis 2:** Diese App ist nur die Basis der Idee. Passe sie nach Belieben an (hinzufügen / entfernen / anpassen), damit sie für dich und dein Team sinnvoll funktioniert.  
+**Hinweis 2:** Diese App ist bereits voll funktional aber nur die Basis der Idee. Passe sie nach Belieben an **(hinzufügen / entfernen / anpassen)**, damit sie für dich und dein Team noch besser funktioniert.  
 
 ![FlowStep Sequence](./Sequence.gif)
 
@@ -44,13 +44,13 @@ z.B: ➜ Local:   http://localhost:3000/
 💡 Der Workflow (80/20 Prinzip)  
 80% bereits fertig / 20% - das finish - machst du selbst  
 Logik-Extraktion: Kopiere deinen Code und lass dir von einer KI (lokal oder cloud) (z.B. Gemini (beste Resultate bei tests)) mit dem passenden FlowStep-Prompt (prompt_german.txt im VZ) die Logik-Daten im JSON-Format erstellen.  
-Prompt-Aufbau: Was soll die KI tun + Richtlinien für Design -> Ein ReactFlow Beispiel (lösche das nicht - wenn ersetze es durch dein eigenes best practice) -> Dein Code (hier ist der Platz für deinen Code).
+Prompt-Aufbau: Was soll die KI tun + Richtlinien für Design -> Ein ReactFlow Beispiel (lösche das nicht - wenn ersetze es durch dein eigenes best practice) -> **Dein Code (hier ist der Platz für deinen Code)**.
 
 1. Import: Ersetze den Inhalt der **constants.tsx komplett** mit dem dir ausgelieferten Code der KI. Falls nicht sofort sichtbar, drücke rechts auf "Restore Defaults".
 
 2. Feinschliff: Passe die Positionen der Boxen (Nodes) kurz manuell an. Schau dir unter "Sequence" die Sequenz an ob sie dir passt.
 
-3. Export: Klicke auf "Export Portable HTML". Du erhältst eine einzige, kleine read-only .html Datei.
+3. Export: Klicke auf **"Save"** und dann "Export Portable HTML". Du erhältst eine einzige, kleine read-only .html Datei.
 
 📦 Auslieferung & Support
 Die exportierte HTML-Datei ist völlig unabhängig. Du kannst sie dem Support schicken, in dein Wiki einbetten oder einfach im Browser öffnen. Sie benötigt kein Node.js und keinen Server.
