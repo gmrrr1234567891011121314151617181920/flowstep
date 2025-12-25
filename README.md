@@ -5,7 +5,10 @@
 FlowStep is a tool designed to convert complex code logic into clean, easy to understand, interactive process diagrams. It’s the perfect bridge between Development and Support.  
 The purpose of this tool is **not** to provide support staff with a testing checklist or to visualise the **complexity of your code**, but by concentrating on the raw process flow of your code, **we enable** colleagues to trace the code execution logic and identify the root cause of module failures.
 
-If you try FlowStep with my prompt and you wonder that your diagram looks very simple - well that was the goal 😉.
+If you try FlowStep with my prompt and you wonder that your diagram looks very simple - well that was the goal 😉.  
+
+This is an example of the final portable HTML artifact that is shared with support teams.  
+👉 [Export function showcase](https://kalainc.github.io/flowstep/)
 
 **Note:** While manual creation is possible, FlowStep is built for AI speed. If you are not allowed to use AI or prefer building everything from scratch, ReactFlow’s [showcase](https://reactflow.dev/showcase) might offer more traditional and better alternatives.
 

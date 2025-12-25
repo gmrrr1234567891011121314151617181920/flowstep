@@ -7,6 +7,9 @@ Das Tool ist nicht dafür gedacht Support Mitarbeitern eine Prüfungscheckliste 
 
 Wenn du FlowStep mit meinem Prompt ausprobierst und dich wunderst, dass dein Diagramm sehr einfach aussieht – genau das war das Ziel 😉  
 
+Das ist ein Beispiel eines via "Export portable HTML" exportierten read-only exports aus FlowStep. 
+👉 [Export function showcase](https://kalainc.github.io/flowstep/)
+
 **Hinweis:** Eine komplette manuelle Erstellung ist möglich, FlowStep ist jedoch auf Geschwindigkeit durch KI ausgelegt. Wenn du keine KI einsetzen darfst oder lieber alles von Grund auf selbst baust, bietet das ReactFlow-[showcase](https://reactflow.dev/showcase) möglicherweise klassischere und passendere Alternativen.  
 
 **Hinweis 2:** Diese App ist bereits voll funktional aber nur die Basis der Idee. Passe sie nach Belieben an **(hinzufügen / entfernen / anpassen)**, damit sie für dich und dein Team noch besser funktioniert.  
