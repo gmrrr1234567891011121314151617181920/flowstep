@@ -13,7 +13,6 @@ import {
   BetweenVerticalEnd, 
   BetweenHorizontalEnd,
   Trash2,
-  Copy,
   Plus,
   ExternalLink
 } from 'lucide-react';
@@ -26,12 +25,13 @@ interface ControlPanelProps {
   onNextStep: () => void;
   canGoNext: boolean;
   onSave: () => void;
-  onCopyConfig: () => void;
   onLayoutAction: (type: string) => void;
   onDelete: () => void;
   onAddNode: () => void;
   hasSelection: boolean;
   onExport: () => void;
+  leftOffset?: number;
+  workspacePanel?: React.ReactNode;
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({ 
@@ -42,15 +42,19 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onNextStep,
   canGoNext,
   onSave,
-  onCopyConfig,
   onLayoutAction,
   onDelete,
   onAddNode,
   hasSelection,
-  onExport
+  onExport,
+  leftOffset,
+  workspacePanel
 }) => {
   return (
-    <div className="absolute top-6 left-6 z-50 flex flex-col gap-4 pointer-events-none">
+    <div
+      className="absolute top-6 z-50 flex flex-col gap-4 pointer-events-none"
+      style={{ left: leftOffset ?? 24 }}
+    >
       {/* Main Mode Toggle */}
       <div className="bg-white/90 backdrop-blur-md shadow-xl border border-slate-200 rounded-2xl p-1.5 flex gap-1 pointer-events-auto">
         <button
@@ -119,16 +123,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 <Save size={18} />
                 Save
               </button>
-              
-              <button
-                onClick={onCopyConfig}
-                className="flex items-center gap-2 px-4 py-2.5 bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 rounded-xl transition-all font-bold text-sm shadow-sm"
-                title="Copy Configuration"
-              >
-                <Copy size={18} />
-                Config
-              </button>
-              
+
               {hasSelection && (
                 <button
                   onClick={onDelete}
@@ -165,6 +160,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           Export Portable HTML as read-only
         </button>
       </div>
+
+      {workspacePanel}
     </div>
   );
 };

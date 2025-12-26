@@ -18,13 +18,11 @@ Beispiel für Support-Optimierung:
 Schlecht (für Entwickler): label: "check_for_new_command()", details: ["if not raw: return", "last_path = exec_json"]
 Gut (für Support): label: "Prüfe auf neue Befehle", details: ["Prüfe ob Dateiinhalt gültig ist", "Abgleich mit letztem ausgeführtem Befehl"]
 
-Schreib deinen Output so dass die komplette Datei "constants.tsx" ersetzt werden kann beginnend von import.
+Schreib deinen JSON Output wie im unten angeführten Beispiel sodass es direkt in den import kopiert werden kann.
 
 Eine Beispieldatei zur Orientierung:
 
-import { WorkflowData } from './types';
-
-export const INITIAL_WORKFLOW: WorkflowData = {
+{
   "version": 1,
   "meta": {
     "name": "Autonomer Trading-Bot L2 Support Flow",
@@ -319,7 +317,7 @@ export const INITIAL_WORKFLOW: WorkflowData = {
       "type": "smoothstep"
     }
   ]
-};
+}
 
 Hier ist der zu analysierende Code:
 <Dein Code hier bzw. Code aller zusammenspielenden Module falls notwendig

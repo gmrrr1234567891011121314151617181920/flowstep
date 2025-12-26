@@ -1,4 +1,5 @@
-# FlowStep - AI-Assisted Code-to-Support-Flow Visualizer
+# FlowStep - AI-Assisted Code-to-Support-Flow Visualizer  
+
 **Dein Code** ⟶ *lokale/cloudbasierte KI erzeugt ein ReactFlow-JSON* ⟶ Import in FlowStep ⟶ **fertigstellen und als einzelne, schreibgeschützte HTML-Datei mit integrierter Ausführungssequenz exportieren**  
 *Die Sequenzansicht hebt automatisch Schritt für Schritt die Ausführungsreihenfolge hervor und macht so leicht verständlich, was als Nächstes passiert – ganz ohne den Code lesen zu müssen.*
 
@@ -48,10 +49,15 @@ z.B: ➜ Local:   http://localhost:3000/
 
 💡 Der Workflow (80/20 Prinzip)  
 80% bereits fertig / 20% - das finish - machst du selbst  
-Logik-Extraktion: Kopiere deinen Code und lass dir von einer KI (lokal oder cloud) (z.B. Gemini (beste Resultate bei tests)) mit dem passenden FlowStep-Prompt (prompt_german.txt im VZ) die Logik-Daten im JSON-Format erstellen.  
+
+Logik-Extraktion: Kopiere deinen Code und lass dir von einer KI (lokal oder cloud) mit dem passenden FlowStep-Prompt (prompt_german.txt im VZ) die Logik-Daten im JSON-Format erstellen.  
 Prompt-Aufbau: Was soll die KI tun + Richtlinien für Design -> Ein ReactFlow Beispiel (lösche das nicht - wenn ersetze es durch dein eigenes best practice) -> **Dein Code (hier ist der Platz für deinen Code)**.
 
-1. Import: Ersetze den Inhalt der **constants.tsx komplett** mit dem dir ausgelieferten Code der KI. Falls nicht sofort sichtbar, drücke rechts auf "Restore Defaults".
+1. Import: Klicke auf **Connect your workspace** und wähle den zugehörigen Ordner "flows" aus. FlowStep wird nun allte gültigen `.json` flows in diesem Ordner anzeigen. Wenn du frisch beginnen willst, benutze **New flow**.   
+
+⚠️**Der Stift:** Dieser Button bietet dir zwei Features an "*Rename flow*" und "*Replace JSON"*  
+    **Rename Flow:** Bennent das .JSON in deinen bevorzuten Namen um.  
+    **Replace JSON:** Füge hier dein initiales JSON ein welches du von der KI bekommen hast oder ein verbessertes/neues JSON.
 
 2. Feinschliff: Passe die Positionen der Boxen (Nodes) kurz manuell an. Schau dir unter "Sequence" die Sequenz an ob sie dir passt.
 
@@ -63,18 +69,12 @@ Die exportierte HTML-Datei ist völlig unabhängig. Du kannst sie dem Support sc
 Viel Erfolg beim Visualisieren!
 
 > [!IMPORTANT]
-#### ⚠️ Wichtige Infos zu Save, Copy, Restore und Export – damit alles reibungslos läuft und du nicht denkst "meh, funktioniert nicht" ⚠️
+#### ⚠️ Wichtige Infos zu Save, Restore und Export – damit alles reibungslos läuft und du nicht denkst "meh, funktioniert nicht" ⚠️
 
-"Browser Save"
-Save (Speichern): Der Save-Button speichert deinen aktuellen Stand im LocalStorage deines Browsers. Wenn du die Seite neu lädst, bleibt dein Fortschritt erhalten. 
-Achtung: Das schreibt nicht zurück in deine constants.tsx Datei auf der Festplatte. Wenn du "hard save" willst benutzte Copy.
+Save (Speichern): Der Save-Button speichert deinen aktuellen Stand direkt in die zugehörige JSON Datei.
 
-"Hard Save"
-Copy (Kopieren/Hard Save): Dieser Button kopiert den kompletten Code deines aktuellen Stands, für deine constants.tsx in die Zwischenablage. 
-Um deine Arbeit "hart" zu speichern, ersetze den **kompletten** Inhalt deiner lokalen constants.tsx Datei mit diesem kopierten Code.
-
-Restore Defaults (Standard wiederherstellen): Dieser Button setzt den Editor auf den Stand zurück, der aktuell in deiner constants.tsx Datei steht. 
-Nutze das, wenn du einen alten Stand aus LocalStorage siehst oder komplett von vorne anfangen willst.
+Restore Defaults (Standard wiederherstellen): Dieser Button setzt den Editor auf den Default Stand zurück. 
+Nutze das, wenn du komplett von vorne anfangen willst.
 
 Export Portable HTML: Diese Funktion nutzt die Daten aus deinem LocalStorage, um die HTML-Datei zu generieren. 
 Wichtig: Drücke immer erst auf "Save", bevor du den Export startest, damit auch wirklich dein neuester Stand im Dokument landet.

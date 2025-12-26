@@ -12,13 +12,12 @@ import ReactFlow, {
   ReactFlowProvider,
   MarkerType,
   updateEdge,
-  useReactFlow,
   OnNodesChange,
 } from 'reactflow';
-import { RotateCcw, Layout, Settings2, Trash2, Palette } from 'lucide-react';
+import { RotateCcw, Settings2, Trash2, Palette, FolderOpen, ChevronUp, ChevronDown, Pen, Plus } from 'lucide-react';
 
-import { INITIAL_WORKFLOW } from './constants';
-import { AppMode, CustomNodeData } from './types';
+import { DEFAULT_FLOW_TEMPLATE } from './constants';
+import { AppMode, CustomNodeData, WorkflowData } from './types';
 import CustomNode from './components/CustomNode';
 import ControlPanel from './components/ControlPanel';
 
@@ -28,8 +27,9 @@ const nodeTypes = {
 
 const GRID_STEP = 15;
 const NODE_WIDTH = 256;
-const STORAGE_KEY = 'flowstep_workflow_persistent';
 const THEME_STORAGE_KEY = 'flowstep_theme_persistent';
+const IGNORED_FLOW_FILES = new Set(['default.json']);
+const FLOW_SIDEBAR_WIDTH = 280;
 
 const snap = (v: number) => Math.round(v / GRID_STEP) * GRID_STEP;
 
@@ -419,37 +419,146 @@ const buildExportHtml = (data: any, themeColor: string) => {
 </html>`;
 };
 
+type FlowFileEntry = {
+  name: string;
+  fileName: string;
+  handle: FileSystemFileHandle;
+};
+
+const stripJsonExtension = (name: string) => name.replace(/\.json$/i, '');
+
+const ensureJsonFileName = (rawName: string) => {
+  const trimmed = rawName.trim();
+  if (!trimmed) return null;
+  const safe = trimmed.replace(/[\\\/]/g, '');
+  if (!safe) return null;
+  return safe.toLowerCase().endsWith('.json') ? safe : `${safe}.json`;
+};
+
+const buildFlowData = (nodes: Node<CustomNodeData>[], edges: Edge[], name: string, notes?: string): WorkflowData => {
+  return {
+    version: 1,
+    meta: {
+      name,
+      format: 'reactflow',
+      notes: notes || `Last updated: ${new Date().toLocaleString()}`,
+    },
+    nodes: nodes.map(({ id, type, position, data }) => ({
+      id,
+      type: type || 'custom',
+      position,
+      data: {
+        label: data?.label ?? '',
+        details: Array.isArray(data?.details) ? data.details : [],
+      },
+    })),
+    edges: edges.map(({ id, source, target, sourceHandle, targetHandle, type, label }) => ({
+      id,
+      source,
+      target,
+      sourceHandle,
+      targetHandle,
+      type,
+      label,
+    })),
+  };
+};
+
+const isValidFlowData = (data: any): data is WorkflowData => {
+  if (!data || !Array.isArray(data.nodes) || !Array.isArray(data.edges)) return false;
+  const nodesValid = data.nodes.every(
+    (n: any) =>
+      n &&
+      typeof n.id === 'string' &&
+      n.position &&
+      typeof n.position.x === 'number' &&
+      typeof n.position.y === 'number'
+  );
+  const edgesValid = data.edges.every(
+    (e: any) =>
+      e &&
+      typeof e.id === 'string' &&
+      typeof e.source === 'string' &&
+      typeof e.target === 'string'
+  );
+  return nodesValid && edgesValid;
+};
+
+const normalizeFlowData = (data: WorkflowData) => {
+  const meta = data.meta
+    ? {
+        name: data.meta.name || 'Untitled',
+        format: data.meta.format || 'reactflow',
+        notes: data.meta.notes || '',
+      }
+    : { name: 'Untitled', format: 'reactflow', notes: '' };
+
+  const nodes: Node<CustomNodeData>[] = data.nodes.map((n, idx) => ({
+    id: String(n.id || `node_${idx}`),
+    type: n.type || 'custom',
+    position: n.position || { x: 0, y: 0 },
+    data: {
+      label: n.data?.label ?? '',
+      details: Array.isArray(n.data?.details) ? n.data.details : [],
+    },
+  }));
+
+  const edges: Edge[] = data.edges.map((e, idx) => ({
+    id: String(e.id || `edge_${idx}`),
+    source: String(e.source),
+    target: String(e.target),
+    sourceHandle: e.sourceHandle,
+    targetHandle: e.targetHandle,
+    type: e.type,
+    label: e.label,
+  }));
+
+  return { meta, nodes, edges };
+};
+
 const AppContent = () => {
   const edgeUpdateSuccessful = useRef(true);
-  const reactFlowInstance = useReactFlow();
 
   // Theme State
   const [themeColor, setThemeColor] = useState(() => {
     return localStorage.getItem(THEME_STORAGE_KEY) || '#6366f1';
   });
 
-  // Persistence Loading
-  const loadInitialData = () => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch (e) {
-      console.error('Failed to load from storage', e);
-    }
-    return INITIAL_WORKFLOW;
-  };
-
-  const initialData = loadInitialData();
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialData.nodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialData.edges);
+  const [nodes, setNodes, onNodesChangeBase] = useNodesState(DEFAULT_FLOW_TEMPLATE.nodes);
+  const [edges, setEdges, onEdgesChangeBase] = useEdgesState(DEFAULT_FLOW_TEMPLATE.edges);
 
   const [mode, setMode] = useState<AppMode>(AppMode.EDIT);
   const [toast, setToast] = useState<{ message: string; visible: boolean }>({
     message: '',
     visible: false,
   });
+  const [workspaceHandle, setWorkspaceHandle] = useState<FileSystemDirectoryHandle | null>(null);
+  const [flowFiles, setFlowFiles] = useState<FlowFileEntry[]>([]);
+  const [selectedFlow, setSelectedFlow] = useState<FlowFileEntry | null>(null);
+  const [isFlowSidebarOpen, setIsFlowSidebarOpen] = useState(false);
+  const [flowDirty, setFlowDirty] = useState(false);
+  const [flowMenuAnchor, setFlowMenuAnchor] = useState<{
+    flow: FlowFileEntry;
+    rect: { top: number; left: number; right: number; bottom: number };
+  } | null>(null);
+
+  const isFileSystemSupported = typeof window !== 'undefined' && 'showDirectoryPicker' in window;
+
+  const onNodesChange: OnNodesChange = useCallback(
+    (changes) => {
+      if (changes.some((c) => c.type !== 'select')) setFlowDirty(true);
+      onNodesChangeBase(changes);
+    },
+    [onNodesChangeBase]
+  );
+
+  const onEdgesChange = useCallback(
+    (changes) => {
+      if (changes.some((c) => c.type !== 'select')) setFlowDirty(true);
+      onEdgesChangeBase(changes);
+    },
+    [onEdgesChangeBase]
+  );
 
   const [visibleNodeIds, setVisibleNodeIds] = useState<Set<string>>(new Set());
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
@@ -463,74 +572,347 @@ const AppContent = () => {
     setTimeout(() => setToast((prev) => ({ ...prev, visible: false })), 5000);
   }, []);
 
-  const handleSave = useCallback(() => {
-    const dataToSave = {
-      version: 1,
-      meta: INITIAL_WORKFLOW.meta,
-      nodes,
-      edges,
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+  useEffect(() => {
     localStorage.setItem(THEME_STORAGE_KEY, themeColor);
-    showToast('Layout and Theme saved!');
-  }, [nodes, edges, themeColor, showToast]);
+  }, [themeColor]);
 
-  const handleCopyConfig = useCallback(() => {
-    const config = {
-      version: 1,
-      meta: { ...INITIAL_WORKFLOW.meta, notes: `Last updated: ${new Date().toLocaleString()}` },
-      nodes: nodes.map(({ id, type, position, data }) => ({ 
-        id, 
-        type, 
-        position, 
-        data: { label: data.label, details: data.details } 
-      })),
-      edges: edges.map(({ id, source, target, sourceHandle, targetHandle, type, label }) => ({
-        id,
-        source,
-        target,
-        sourceHandle,
-        targetHandle,
-        type,
-        label,
-      })),
+  const flowMenuPosition = useMemo(() => {
+    if (!flowMenuAnchor || typeof window === 'undefined') return null;
+    const width = 160;
+    const height = 84;
+    const left = Math.min(
+      flowMenuAnchor.rect.right - width,
+      window.innerWidth - width - 12
+    );
+    const topCandidate = flowMenuAnchor.rect.bottom + 6;
+    const top =
+      topCandidate + height > window.innerHeight
+        ? flowMenuAnchor.rect.top - height - 6
+        : topCandidate;
+    return {
+      left: Math.max(12, left),
+      top: Math.max(12, top),
+      width,
+    };
+  }, [flowMenuAnchor]);
+
+  useEffect(() => {
+    if (!flowMenuAnchor) return;
+    const handlePointer = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+      if (target.closest('[data-flow-menu]')) return;
+      if (target.closest('[data-flow-menu-trigger]')) return;
+      setFlowMenuAnchor(null);
     };
 
-    const code = `import { WorkflowData } from './types';\n\nexport const INITIAL_WORKFLOW: WorkflowData = ${JSON.stringify(
-      config,
-      null,
-      2
-    )};`;
+    const handleScroll = () => setFlowMenuAnchor(null);
+    document.addEventListener('mousedown', handlePointer);
+    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('resize', handleScroll);
 
-    navigator.clipboard
-      .writeText(code)
-      .then(() => showToast('📋 Code copied! [CTRL+A] -> [CTRL+V] in constants.tsx'))
-      .catch((err) => {
-        console.error('Could not copy text: ', err);
-        showToast('Copy failed');
-      });
-  }, [nodes, edges, showToast]);
+    return () => {
+      document.removeEventListener('mousedown', handlePointer);
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [flowMenuAnchor]);
+
+  const readFlowFromHandle = useCallback(async (handle: FileSystemFileHandle) => {
+    const file = await handle.getFile();
+    const text = await file.text();
+    const raw = JSON.parse(text);
+    if (!isValidFlowData(raw)) {
+      throw new Error('Invalid flow file structure');
+    }
+    return normalizeFlowData(raw);
+  }, []);
+
+  const loadWorkspaceFlows = useCallback(async (handle: FileSystemDirectoryHandle) => {
+    const nextFlows: FlowFileEntry[] = [];
+
+    for await (const [name, entry] of handle.entries()) {
+      if (entry.kind !== 'file') continue;
+      const lowerName = name.toLowerCase();
+      if (!lowerName.endsWith('.json')) continue;
+      if (IGNORED_FLOW_FILES.has(lowerName)) continue;
+
+      try {
+        const flowHandle = entry as FileSystemFileHandle;
+        const parsed = await readFlowFromHandle(flowHandle);
+        if (!parsed.nodes.length && !parsed.edges.length) continue;
+        nextFlows.push({
+          name: stripJsonExtension(name),
+          fileName: name,
+          handle: flowHandle,
+        });
+      } catch (error) {
+        console.warn('Skipping invalid flow file:', name, error);
+      }
+    }
+
+    nextFlows.sort((a, b) => a.name.localeCompare(b.name));
+    return nextFlows;
+  }, [readFlowFromHandle]);
+
+  const refreshWorkspace = useCallback(async (handle: FileSystemDirectoryHandle) => {
+    const flows = await loadWorkspaceFlows(handle);
+    setFlowFiles(flows);
+    return flows;
+  }, [loadWorkspaceFlows]);
+
+  const handleImportWorkspace = useCallback(async () => {
+    console.info('Import flows clicked', {
+      supported: isFileSystemSupported,
+      hasWorkspace: Boolean(workspaceHandle),
+    });
+    if (!isFileSystemSupported) {
+      showToast('Folder access not supported in this browser');
+      return;
+    }
+
+    try {
+      const handle = await window.showDirectoryPicker();
+      console.info('Workspace selected', { name: handle?.name });
+      setWorkspaceHandle(handle);
+      setIsFlowSidebarOpen(true);
+      const flows = await refreshWorkspace(handle);
+
+      if (flows.length === 0) {
+        setSelectedFlow(null);
+        setNodes(DEFAULT_FLOW_TEMPLATE.nodes);
+        setEdges(DEFAULT_FLOW_TEMPLATE.edges);
+        setFlowDirty(false);
+        showToast('Workspace connected (no flows found)');
+        return;
+      }
+
+      const stillSelected = selectedFlow && flows.find((f) => f.fileName === selectedFlow.fileName);
+      const nextFlow = stillSelected || flows[0];
+      setSelectedFlow(nextFlow);
+
+      const flowData = await readFlowFromHandle(nextFlow.handle);
+      setNodes(flowData.nodes);
+      setEdges(flowData.edges);
+      setFlowDirty(false);
+      showToast('Workspace connected');
+    } catch (error: any) {
+      if (error?.name !== 'AbortError') {
+        console.error('Workspace import failed', error);
+        showToast(error?.message || 'Workspace import failed');
+      }
+    }
+  }, [isFileSystemSupported, readFlowFromHandle, refreshWorkspace, selectedFlow, setEdges, setNodes, showToast, workspaceHandle]);
+
+  const handleSelectFlow = useCallback(
+    async (flow: FlowFileEntry, options?: { force?: boolean }) => {
+      if (!workspaceHandle) return;
+      if (!options?.force && flowDirty && selectedFlow?.fileName !== flow.fileName) {
+        const shouldDiscard = confirm('You have unsaved changes. Switch flows and discard them?');
+        if (!shouldDiscard) return;
+      }
+
+      try {
+        const flowData = await readFlowFromHandle(flow.handle);
+        setNodes(flowData.nodes);
+        setEdges(flowData.edges);
+        setSelectedFlow(flow);
+        setFlowDirty(false);
+        setFlowMenuAnchor(null);
+        setVisibleNodeIds(new Set());
+        setActiveNodeId(null);
+        setMode(AppMode.EDIT);
+      } catch (error) {
+        console.error('Failed to load flow', error);
+        showToast('Failed to load flow');
+      }
+    },
+    [flowDirty, readFlowFromHandle, selectedFlow?.fileName, setEdges, setNodes, workspaceHandle, showToast]
+  );
+
+  const handleCreateFlow = useCallback(async () => {
+    if (!workspaceHandle) {
+      showToast('Select a workspace first');
+      return;
+    }
+
+    const input = prompt('New flow name');
+    if (!input) return;
+
+    const fileName = ensureJsonFileName(input);
+    if (!fileName) {
+      showToast('Flow name cannot be empty');
+      return;
+    }
+
+    if (flowFiles.some((f) => f.fileName.toLowerCase() === fileName.toLowerCase())) {
+      showToast('A flow with that name already exists');
+      return;
+    }
+
+    try {
+      const handle = await workspaceHandle.getFileHandle(fileName, { create: true });
+      const flowData = buildFlowData(
+        DEFAULT_FLOW_TEMPLATE.nodes,
+        DEFAULT_FLOW_TEMPLATE.edges,
+        stripJsonExtension(fileName)
+      );
+      const writable = await handle.createWritable();
+      await writable.write(JSON.stringify(flowData, null, 2));
+      await writable.close();
+
+      const flows = await refreshWorkspace(workspaceHandle);
+      const created = flows.find((f) => f.fileName.toLowerCase() === fileName.toLowerCase());
+      if (created) {
+        await handleSelectFlow(created, { force: true });
+      }
+      showToast('New flow created');
+    } catch (error) {
+      console.error('Failed to create flow', error);
+      showToast('Failed to create flow');
+    }
+  }, [flowFiles, handleSelectFlow, refreshWorkspace, showToast, workspaceHandle]);
+
+  const handleRenameFlow = useCallback(async (flow: FlowFileEntry) => {
+    if (!workspaceHandle) return;
+    if (!selectedFlow || selectedFlow.fileName !== flow.fileName) {
+      showToast('Select this flow before renaming');
+      return;
+    }
+
+    const input = prompt('Rename flow', flow.name);
+    if (!input) return;
+
+    const fileName = ensureJsonFileName(input);
+    if (!fileName) {
+      showToast('Flow name cannot be empty');
+      return;
+    }
+
+    if (flowFiles.some((f) => f.fileName.toLowerCase() === fileName.toLowerCase())) {
+      showToast('A flow with that name already exists');
+      return;
+    }
+
+    try {
+      const newHandle = await workspaceHandle.getFileHandle(fileName, { create: true });
+      const flowData = buildFlowData(nodes, edges, stripJsonExtension(fileName));
+      const writable = await newHandle.createWritable();
+      await writable.write(JSON.stringify(flowData, null, 2));
+      await writable.close();
+
+      try {
+        await workspaceHandle.removeEntry(flow.fileName);
+      } catch (error) {
+        console.warn('Failed to delete old flow file', error);
+        showToast('New file created, old file could not be deleted');
+      }
+
+      const flows = await refreshWorkspace(workspaceHandle);
+      const renamed = flows.find((f) => f.fileName.toLowerCase() === fileName.toLowerCase());
+      if (renamed) {
+        setSelectedFlow(renamed);
+      }
+      setFlowDirty(false);
+      showToast('Flow renamed');
+    } catch (error) {
+      console.error('Failed to rename flow', error);
+      showToast('Failed to rename flow');
+    }
+  }, [edges, flowFiles, nodes, refreshWorkspace, selectedFlow, showToast, workspaceHandle]);
+
+  const handleReplaceJson = useCallback(
+    async (flow: FlowFileEntry) => {
+      if (!selectedFlow || selectedFlow.fileName !== flow.fileName) {
+        showToast('Select this flow before replacing');
+        return;
+      }
+
+      const input = prompt('Paste full ReactFlow JSON');
+      if (!input) return;
+
+      try {
+        const parsed = JSON.parse(input);
+        if (!isValidFlowData(parsed)) {
+          showToast('JSON is missing nodes/edges or required fields');
+          return;
+        }
+        const normalized = normalizeFlowData(parsed);
+        setNodes(normalized.nodes);
+        setEdges(normalized.edges);
+        setFlowDirty(true);
+        showToast('JSON replaced (remember to save)');
+      } catch (error) {
+        console.error('Invalid JSON', error);
+        showToast('Invalid JSON');
+      }
+    },
+    [selectedFlow, setEdges, setNodes, showToast]
+  );
+
+  const handleDeleteFlow = useCallback(
+    async (flow: FlowFileEntry) => {
+      if (!workspaceHandle) return;
+      const shouldDelete = confirm(`Delete "${flow.name}"? This cannot be undone.`);
+      if (!shouldDelete) return;
+
+      try {
+        await workspaceHandle.removeEntry(flow.fileName);
+        const flows = await refreshWorkspace(workspaceHandle);
+
+        if (selectedFlow?.fileName === flow.fileName) {
+          if (flows.length > 0) {
+            await handleSelectFlow(flows[0], { force: true });
+          } else {
+            setSelectedFlow(null);
+            setNodes(DEFAULT_FLOW_TEMPLATE.nodes);
+            setEdges(DEFAULT_FLOW_TEMPLATE.edges);
+            setFlowDirty(false);
+          }
+        }
+        showToast('Flow deleted');
+      } catch (error) {
+        console.error('Failed to delete flow', error);
+        showToast('Failed to delete flow');
+      }
+    },
+    [handleSelectFlow, refreshWorkspace, selectedFlow?.fileName, setEdges, setNodes, showToast, workspaceHandle]
+  );
+
+  const handleSave = useCallback(async () => {
+    if (!workspaceHandle) {
+      showToast('Select a workspace first');
+      return;
+    }
+    if (!selectedFlow) {
+      showToast('Select a flow to save');
+      return;
+    }
+
+    try {
+      const flowData = buildFlowData(nodes, edges, selectedFlow.name);
+      const writable = await selectedFlow.handle.createWritable();
+      await writable.write(JSON.stringify(flowData, null, 2));
+      await writable.close();
+      setFlowDirty(false);
+      showToast('Flow saved');
+    } catch (error) {
+      console.error('Failed to save flow', error);
+      showToast('Failed to save flow');
+    }
+  }, [edges, nodes, selectedFlow, showToast, workspaceHandle]);
 
   const handleExportPortableHtml = useCallback(() => {
-    const exportData = {
-      version: 1,
-      meta: { ...INITIAL_WORKFLOW.meta, notes: `Snapshot: ${new Date().toLocaleString()}` },
-      nodes: nodes.map(({ id, type, position, data }) => ({
-        id,
-        type,
-        position,
-        data: { label: data.label, details: data.details || [] }
-      })),
-      edges: edges.map(({ id, source, target, sourceHandle, targetHandle, type, label }) => ({
-        id,
-        source,
-        target,
-        sourceHandle,
-        targetHandle,
-        type,
-        label
-      }))
-    };
+    if (flowDirty) {
+      showToast('Export uses current state. Save recommended.');
+    }
+
+    const exportData = buildFlowData(
+      nodes,
+      edges,
+      selectedFlow?.name || 'FlowStep export',
+      `Snapshot: ${new Date().toLocaleString()}`
+    );
 
     const html = buildExportHtml(exportData, themeColor);
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
@@ -546,30 +928,32 @@ const AppContent = () => {
     URL.revokeObjectURL(url);
 
     showToast('Portable HTML exported');
-  }, [nodes, edges, themeColor, showToast]);
+  }, [edges, flowDirty, nodes, selectedFlow?.name, showToast, themeColor]);
 
   const handleResetToDefault = useCallback(() => {
-    if (confirm('Reset layout to original defaults? This will clear your saved changes.')) {
-      setNodes(INITIAL_WORKFLOW.nodes);
-      setEdges(INITIAL_WORKFLOW.edges);
+    if (confirm('Reset layout to default template? This will clear your current changes.')) {
+      setNodes(DEFAULT_FLOW_TEMPLATE.nodes);
+      setEdges(DEFAULT_FLOW_TEMPLATE.edges);
       setThemeColor('#6366f1');
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(THEME_STORAGE_KEY);
+      setFlowDirty(Boolean(selectedFlow));
       showToast('Reset to defaults');
     }
-  }, [setNodes, setEdges, showToast]);
+  }, [selectedFlow, setEdges, setNodes, showToast]);
 
   const updateNodeLabel = (id: string, label: string) => {
     setNodes((nds) => nds.map((n) => n.id === id ? { ...n, data: { ...n.data, label } } : n));
+    setFlowDirty(true);
   };
 
   const updateNodeDetails = (id: string, detailsString: string) => {
     const details = detailsString.split('\n').filter(s => s.trim().length > 0);
     setNodes((nds) => nds.map((n) => n.id === id ? { ...n, data: { ...n.data, details } } : n));
+    setFlowDirty(true);
   };
 
   const updateEdgeLabel = (id: string, label: string) => {
     setEdges((eds) => eds.map((e) => e.id === id ? { ...e, label } : e));
+    setFlowDirty(true);
   };
 
   const onAddNode = useCallback(() => {
@@ -589,6 +973,7 @@ const AppContent = () => {
       ...nds.map(n => ({ ...n, selected: false })),
       newNode
     ]);
+    setFlowDirty(true);
     showToast("Node added");
   }, [setNodes, showToast]);
 
@@ -654,6 +1039,7 @@ const AppContent = () => {
       )
     );
 
+    setFlowDirty(true);
     showToast('Deleted selection');
   }, [nodes, edges, setNodes, setEdges, showToast]);
 
@@ -710,6 +1096,7 @@ const AppContent = () => {
           return newNode;
         });
       });
+      setFlowDirty(true);
     },
     [nodes, setNodes, showToast]
   );
@@ -765,6 +1152,7 @@ const AppContent = () => {
           eds
         )
       );
+      setFlowDirty(true);
     },
     [setEdges, themeColor]
   );
@@ -777,6 +1165,7 @@ const AppContent = () => {
     (oldEdge: Edge, newConnection: Connection) => {
       edgeUpdateSuccessful.current = true;
       setEdges((eds) => updateEdge(oldEdge, newConnection, eds));
+      setFlowDirty(true);
     },
     [setEdges]
   );
@@ -841,17 +1230,175 @@ const AppContent = () => {
         onNextStep={advanceSequence}
         canGoNext={canGoNext}
         onSave={handleSave}
-        onCopyConfig={handleCopyConfig}
         onLayoutAction={performLayout}
         onDelete={handleDelete}
         onAddNode={onAddNode}
         hasSelection={hasSelection}
         onExport={handleExportPortableHtml}
+        leftOffset={24}
+        workspacePanel={
+          <div className="pointer-events-auto">
+            <div
+              className={`bg-white/90 backdrop-blur-md shadow-xl border border-slate-200 rounded-2xl transition-all duration-200 w-[280px] flex flex-col ${
+                isFlowSidebarOpen ? 'max-h-[70vh] overflow-visible' : 'h-12 overflow-hidden'
+              }`}
+            >
+              <div className="flex items-center justify-between p-2">
+                <button
+                  onClick={() => setIsFlowSidebarOpen((prev) => !prev)}
+                  className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-slate-100 transition"
+                  title={isFlowSidebarOpen ? 'Collapse flows' : 'Expand flows'}
+                >
+                  {isFlowSidebarOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                  {isFlowSidebarOpen && <span className="text-sm font-bold text-slate-700">Flows</span>}
+                  {!isFlowSidebarOpen && !workspaceHandle && (
+                    <span className="text-sm font-bold text-slate-500">Connect your workspace</span>
+                  )}
+                </button>
+                {isFlowSidebarOpen && selectedFlow && flowDirty && (
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-amber-600">Unsaved</span>
+                )}
+              </div>
+
+              {isFlowSidebarOpen && (
+                <div className="px-3 pb-3">
+                  <button
+                    onClick={handleImportWorkspace}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold shadow hover:bg-slate-800 transition"
+                  >
+                    <FolderOpen size={14} />
+                    {workspaceHandle ? 'Change workspace' : 'Import flows'}
+                  </button>
+
+                  {!isFileSystemSupported && (
+                    <div className="mt-3 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-2 leading-relaxed">
+                      Workspace features require a browser with folder access support (Chrome or Edge).
+                    </div>
+                  )}
+
+                  {workspaceHandle && (
+                    <>
+                      <div className="mt-3 text-[11px] text-slate-500 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                        Workspace connected:{' '}
+                        <span className="font-semibold text-slate-700">{workspaceHandle.name}</span>
+                      </div>
+
+                      <button
+                        onClick={handleCreateFlow}
+                        className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
+                      >
+                        <Plus size={14} />
+                        New flow
+                      </button>
+
+                      <div className="mt-4 space-y-2 pr-1 max-h-[40vh] overflow-y-auto">
+                        {flowFiles.length === 0 ? (
+                          <div className="text-[11px] text-slate-500 bg-slate-50 border border-slate-100 rounded-xl p-3">
+                            No valid flow files found in this workspace.
+                          </div>
+                        ) : (
+                          flowFiles.map((flow) => (
+                            <div
+                              key={flow.fileName}
+                              className={`relative flex items-center justify-between gap-2 px-3 py-2 rounded-xl border transition ${
+                                selectedFlow?.fileName === flow.fileName
+                                  ? 'border-slate-200 bg-slate-50'
+                                  : 'border-transparent hover:bg-slate-50'
+                              }`}
+                            >
+                              <button
+                                onClick={() => handleSelectFlow(flow)}
+                                className="flex-1 text-left text-sm font-semibold text-slate-700 truncate"
+                                title={flow.name}
+                              >
+                                {flow.name}
+                              </button>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+                                    setFlowMenuAnchor((prev) =>
+                                      prev?.flow.fileName === flow.fileName
+                                        ? null
+                                        : {
+                                            flow,
+                                            rect: {
+                                              top: rect.top,
+                                              left: rect.left,
+                                              right: rect.right,
+                                              bottom: rect.bottom,
+                                            },
+                                          }
+                                    );
+                                  }}
+                                  className="text-slate-500 hover:text-slate-800"
+                                  data-flow-menu-trigger
+                                  title="Flow actions"
+                                >
+                                  <Pen size={14} style={{ color: themeColor }} />
+                                </button>
+                                <button
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleDeleteFlow(flow);
+                                  }}
+                                  className="text-red-500 hover:text-red-600"
+                                  title="Delete flow"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        }
       />
 
       {toast.visible && (
         <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 bg-slate-900 text-white rounded-full shadow-2xl text-sm font-bold flex items-center gap-2 animate-toast pointer-events-none">
           {toast.message}
+        </div>
+      )}
+
+      {flowMenuAnchor && flowMenuPosition && (
+        <div
+          data-flow-menu
+          className="bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-[120]"
+          style={{
+            position: 'fixed',
+            top: flowMenuPosition.top,
+            left: flowMenuPosition.left,
+            width: flowMenuPosition.width,
+          }}
+        >
+          <button
+            onClick={() => {
+              setFlowMenuAnchor(null);
+              handleRenameFlow(flowMenuAnchor.flow);
+            }}
+            className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            Rename flow
+          </button>
+          <button
+            onClick={() => {
+              setFlowMenuAnchor(null);
+              handleReplaceJson(flowMenuAnchor.flow);
+            }}
+            className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            Replace JSON
+          </button>
         </div>
       )}
 

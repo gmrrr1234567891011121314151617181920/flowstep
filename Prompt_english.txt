@@ -17,13 +17,11 @@ Example of Support Optimization:
 Bad (for developers): label: "check_for_new_command()", details: ["if not raw: return", "last_path = exec_json"]
 Good (for support): label: "Check for new commands", details: ["Verify if file content is valid", "Compare with last executed command"]
 
-Output Format: Write your output so that the entire constants.tsx file can be replaced, starting from the import statements.
+Output Format: Write your JSON in this below reference file so it can be copy pasted into the import
 
 Reference file for orientation:
 
-import { WorkflowData } from './types';
-
-export const INITIAL_WORKFLOW: WorkflowData = {
+{
   "version": 1,
   "meta": {
     "name": "Autonomous Trading Bot L2 Support Flow",
@@ -318,7 +316,7 @@ export const INITIAL_WORKFLOW: WorkflowData = {
       "type": "smoothstep"
     }
   ]
-};
+}
 
 Code to be analyzed: 
 <Your code here / Code of all interacting modules if necessary Code A -> Code B -> Code C, etc.>

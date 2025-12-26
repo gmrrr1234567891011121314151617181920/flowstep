@@ -1,4 +1,5 @@
-# FlowStep - AI-Assisted Code-to-Support-Flow Visualizer
+# FlowStep - AI-Assisted Code-to-Support-Flow Visualizer  
+
 **Your Code** ⟶ *local/cloud AI builds a ReactFlow JSON* ⟶ Import to FlowStep ⟶ **finish and export a single, read-only HTML file with a built-in execution sequence view**  
 *The sequence view automatically highlights the execution order step by step, making it easy to follow what happens next without reading the code.*
 
@@ -48,14 +49,21 @@ e.g: ➜ Local:   http://localhost:3000/
 ```
 💡The Workflow (80/20 Principle)  
 80% is already done / 20% - the finish - comes from you  
-Logic Extraction: Have the **(Prompt_english.txt)** prompt ready, insert the copy of your code **at the bottom** and let an AI (local or cloud) (e.g., Gemini (best results while testing)) generate the logic data in ReactFlow JSON format.  
-Prompt build: What to do -> ReactFlow example (dont delete this - or you get output which does not exist in my ReactFlow scheme) -> Your Code (this is the place for your code).
 
-1. Import: **Completely replace** the content of **constants.tsx** with the code provided by the AI. If changes aren't visible immediately, click "Restore Defaults" on the right.
+Logic Extraction: Have the **(Prompt_english.txt)** prompt ready, insert the copy of your code **at the bottom** and let an AI (local or cloud) generate the logic data in my ReactFlow JSON format.  
+
+**Prompt build:** Tells the AI what to do ➡️ ReactFlow example *(dont delete this - or you get output which does not exist in my ReactFlow scheme)* ➡️ Your Code (this is the place for your code).
+
+1. Import: Click **Connect your workspace** and select the prepared workspace folder "flows". FlowStep will list all valid `.json` flows in that folder. If you want to start fresh, use **New flow**.  
+"Note: When connecting your workspace, your browser will ask for permission to access the folder. This is necessary to save your changes directly to the JSON files."  
+
+⚠️**The Pen:** This Button provides you with two features "*Rename flow*" and "*Replace JSON"*  
+    **Rename Flow:** Renames the JSON to your prefered name  
+    **Replace JSON:** Paste the initial copied JSON you got from the AI or an improved/different Version
 
 2. Fine-tuning: Briefly adjust the positions of the boxes (nodes) and add additional connections manually. Check the "Sequence" view to ensure the flow is correct.
 
-3. Export: Click on "Save" first and then "Export Portable HTML." You will receive a single, lightweight and read-only .html file.
+3. Export: Click **Save** first and then **Export Portable HTML.** You will receive a single, lightweight and read-only .html file.
 
 📦 Delivery & Support  
 The exported HTML file is completely independent. You can send it to support, embed it in your wiki, or simply open it in a browser. It requires no Node.js and no server to run.
@@ -63,29 +71,19 @@ The exported HTML file is completely independent. You can send it to support, em
 Happy Visualizing!
 
 ```text
-⚠️ Save/Copy/Restore Defaults and Export Portable HTML buttons - what to know so you dont think 
-"meh, doesnt work" ⚠️
+⚠️Save/Restore Defaults and Export Portable HTML buttons - what to know so you dont think
+"meh, doesnt work"⚠️
 
-"Browser Save"
-Save Button: This button saves your current progress to your browser's LocalStorage. 
-If you refresh the page, your work will still be there. 
-Note: This does not write changes back to your actual constants.tsx file 
-on your hard drive, use "Copy" for that.
+Save Button: Writes the current in-UI flow state directly into the selected JSON file
+inside your workspace folder.
 
-"Hard Save"
-Copy: This button copies the entire code for your constants.tsx to your clipboard. 
-To "hard-save" your work permanently, replace the **complete** content of your local 
-constants.tsx file with this copied code.
+Restore Defaults: Resets the editor to the built-in DEFAULT_FLOW_TEMPLATE.
+Use this if you want a clean starting point (remember to Save afterward).
 
-Restore Defauls: This button resets the editor to the state currently defined in your 
-constants.tsx file. 
-Use this if you see an outdated flow from your LocalStorage or want to start over 
-from the file's original state.
-
-Export portable HTML: This function uses the data from your LocalStorage to generate 
-the HTML file. Crucial: Always click **"Save"** before exporting to ensure the HTML 
->includes your latest changes.
+Export portable HTML: Uses the current in-memory state (not LocalStorage).
+Tip: Save first to keep the workspace file in sync.
 ```
+
 ```text
 Tips & Tricks
 
